@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <>
       sfscsd
-      <Link href={"cordinadores"}>Ir a Coordinadores</Link>
+      <Link href={"coordinadores"}>Ir a Coordinadores</Link>
     </>
   );
 }
