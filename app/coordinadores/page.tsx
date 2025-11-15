@@ -67,20 +67,78 @@ export default function CoordinadoresPage() {
   }
 
   const handleAcceptTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId)
     console.log('Justificante aceptado:', taskId)
-    // Aquí puedes agregar lógica adicional para marcar como aceptado
-    setTasks(tasks.map(task => task.id === taskId ? { ...task, status: 'accepted' } : task))
+    if (!task) return
+
+    // Call server to send notification emails
+    fetch('/api/justificantes/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task, status: 'accepted' }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('Email send result:', data)
+        // Remove the task locally after successful email send
+        setTasks(prev => prev.filter(t => t.id !== taskId))
+      })
+      .catch((err) => console.error('Error sending email:', err))
+    // Note: task will be removed from the list on success above
   }
 
   const handleRejectTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId)
     console.log('Justificante rechazado:', taskId)
-    // Aquí puedes agregar lógica adicional para marcar como rechazado
+    if (!task) return
+
+    // Call server to send notification emails
+    fetch('/api/justificantes/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task, status: 'rejected' }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log('Email send result:', data)
+      })
+      .catch((err) => console.error('Error sending email:', err))
+
+    // Mark locally as rejected
     setTasks(tasks.map(task => task.id === taskId ? { ...task, status: 'rejected' } : task))
   }
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task)
     setIsDetailDialogOpen(true)
+  }
+
+  // Simple script to send an automated message to cedric.martinez@cetys.edu.mx
+  const sendAutomatedMessage = async () => {
+    console.log('Enviando mensaje automatizado a cedric.martinez@cetys.edu.mx');
+    const payload = {
+      task: {
+        students: [
+          { name: 'Cédric Martínez', matricula: '00000', email: 'cedric.martinez@cetys.edu.mx' }
+        ]
+      },
+      status: 'accepted'
+    }
+
+    try {
+      const res = await fetch('/api/justificantes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+      console.log('Automated message result:', data)
+      alert('Mensaje automatizado enviado (revisa consola para detalles)')
+    } catch (err) {
+      console.error('Error sending automated message:', err)
+      alert('Error al enviar mensaje automatizado - revisa consola')
+    }
   }
 
   const getTasksForPillar = (pillarIndex: number) => {
