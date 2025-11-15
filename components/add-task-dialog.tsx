@@ -60,28 +60,72 @@ export function AddTaskDialog({ open, onOpenChange, onSave }: AddTaskDialogProps
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    const validStudents = students.every(s => s.name && s.matricula.length === 5)
-    if (!validStudents || !startDate || !endDate || !startTime || !endTime) return
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
 
-    onSave({
-      students,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      startTime,
-      endTime,
-      comments: comments || undefined,
-    })
+  const validStudents = students.every(s => s.name && s.matricula.length === 5)
+  if (!validStudents || !startDate || !endDate || !startTime || !endTime) return
 
-    setStudents([{ name: '', matricula: '' }])
-    setStartDate('')
-    setEndDate('')
-    setStartTime('')
-    setEndTime('')
-    setComments('')
+  // Construimos el task base
+  const task = {
+    students,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    comments: comments || undefined,
   }
+
+  // VALIDAR con base de datos ANTES DE GUARDAR
+  const validatedTask = await validateBeforeSave(task)
+
+  if (!validatedTask) return // hubo error (matrícula incorrecta, alumno no existe, etc)
+
+  // Ahora sí guardamos
+  onSave({
+    ...validatedTask,
+    startDate: new Date(validatedTask.startDate),
+    endDate: new Date(validatedTask.endDate),
+  })
+
+  // Reset formulario
+  setStudents([{ name: '', matricula: '' }])
+  setStartDate('')
+  setEndDate('')
+  setStartTime('')
+  setEndTime('')
+  setComments('')
+}
+
+async function validateBeforeSave(task) {
+  const res = await fetch("/api/justificantes/validate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: task.students[0].name,
+      matricula: task.students[0].matricula,
+      startDate: task.startDate,
+      endDate: task.endDate,
+      startTime: task.startTime,
+      endTime: task.endTime,
+    }),
+  });
+
+  const data = await res.json();
+
+  if (data.error) {
+    alert(data.error);
+    return null;
+  }
+
+  // corregir el nombre
+  task.students[0].name = data.correctedName;
+
+  // incluir clases afectadas
+  task.affectedClasses = data.affectedClasses;
+
+  return task;
+}
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

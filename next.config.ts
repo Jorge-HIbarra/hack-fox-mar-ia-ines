@@ -9,6 +9,14 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        // Forzar mongoose a no romperse con turbopack
+        "whatwg-url": require.resolve("whatwg-url")
+      }
+    }
+  }
 };
 
 export default nextConfig;
