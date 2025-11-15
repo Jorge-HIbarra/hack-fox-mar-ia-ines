@@ -1,6 +1,6 @@
-import { connectDB } from "./db/database.js";
-import { Student } from "./db/student.js";
-import { Class } from "./db/class.js";
+import { connectDB } from "./database.js";
+import { Student } from "./student.js";
+import { Class } from "./class.js";
 
 async function start() {
   await connectDB();
